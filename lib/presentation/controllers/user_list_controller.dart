@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
+
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:studyo_tech_interview/domain/entity/user_entity.dart';
 import 'package:studyo_tech_interview/domain/repository/user_repository.dart';
@@ -10,6 +12,8 @@ class UserListController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;
   StreamSubscription? _userSubscription;
+  final TextEditingController usernameController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
 
   @override
   void onInit() {
@@ -20,6 +24,7 @@ class UserListController extends GetxController {
   @override
   void onClose() {
     _userSubscription?.cancel();
+    usernameController.dispose();
     super.onClose();
   }
 
@@ -27,13 +32,13 @@ class UserListController extends GetxController {
     isLoading.value = true;
     error.value = '';
     _userSubscription = userRepository.fetchAllUsers().listen(
-          (result) {
+      (result) {
         result.fold(
-              (failure) {
+          (failure) {
             error.value = failure.toString();
             isLoading.value = false;
           },
-              (userList) {
+          (userList) {
             users.value = userList;
             isLoading.value = false;
             log('fetchAllUsers: ${users.length}', name: "User List Controller");
@@ -45,5 +50,22 @@ class UserListController extends GetxController {
         isLoading.value = false;
       },
     );
+  }
+
+  void createUser() {
+    if (formKey.currentState!.validate()) {
+      userRepository.createUser(usernameController.text).then(
+        (result) {
+          result.fold(
+            (failure) {
+              error.value = failure.toString();
+            },
+            (success) {
+              usernameController.clear();
+            },
+          );
+        },
+      );
+    }
   }
 }

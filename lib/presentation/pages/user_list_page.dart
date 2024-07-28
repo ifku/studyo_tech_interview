@@ -1,8 +1,11 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:studyo_tech_interview/core/theme/app_colors.dart';
 import 'package:studyo_tech_interview/presentation/controllers/user_list_controller.dart';
 import 'package:studyo_tech_interview/presentation/pages/edit_user_page.dart';
+import 'package:studyo_tech_interview/presentation/widgets/custom_confirm_button.dart';
 
 class UserListPage extends GetView<UserListController> {
   const UserListPage({super.key});
@@ -36,7 +39,7 @@ class UserListPage extends GetView<UserListController> {
                   return ListTile(
                     title: Text(user.username),
                     onTap: () {
-                      Get.to(() => const EditUserPage());
+                      Get.to(() => const EditUserPage(), arguments: {'userId': user.userId});
                     },
                   );
                 },
@@ -45,7 +48,74 @@ class UserListPage extends GetView<UserListController> {
           }),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            Get.bottomSheet(
+              Container(
+                height: MediaQuery.of(context).size.height * 0.3,
+                decoration: const BoxDecoration(
+                  color: AppColors.cyan100,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16.0),
+                    topRight: Radius.circular(16.0),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Add User",
+                          style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 16.0),
+                      Form(
+                        key: controller.formKey,
+                        child: TextFormField(
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Username cannot be empty";
+                            } else if (value.length < 8) {
+                              return "Minimum 8 characters";
+                            } else if (!RegExp(r'^[a-zA-Z0-9]+$')
+                                .hasMatch(value)) {
+                              return "Use characters and numbers only";
+                            } else {
+                              return null;
+                            }
+                          },
+                          controller: controller.usernameController,
+                          cursorColor: Colors.black,
+                          maxLines: 1,
+                          decoration: InputDecoration(
+                            border: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                            enabledBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                            focusedBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                            labelStyle: Theme.of(context).textTheme.titleMedium,
+                            label: const Text("Username"),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16.0),
+                      Center(child: CustomConfirmButton(onPressed: () {
+                        log(controller.usernameController.text,
+                            name: "Username");
+                        if (controller.formKey.currentState != null) {
+                          controller.formKey.currentState!.validate();
+                          controller.createUser();
+                          Get.back();
+                        }
+                      }))
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
           child: const Icon(Icons.add_rounded),
         ),
       ),
