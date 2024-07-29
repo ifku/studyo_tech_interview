@@ -11,7 +11,7 @@ class EditUserController extends GetxController {
   final RxString error = ''.obs;
   final RxString username = ''.obs;
   final RxBool isReview = false.obs;
-  final RxBool isAvailable = true.obs;
+  final RxString validationError = ''.obs;
   final TextEditingController usernameController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
@@ -53,26 +53,6 @@ class EditUserController extends GetxController {
   }
 
   /*
-  * - Check if the username is available and not used by other users.
-  * - This function is called when the user types in the username field.
-  * - It validates the username and checks if it is available.
-  * */
-  Future<bool> checkUserAvailability(String username) async {
-    final result = await userRepository.checkUserAvailability(username);
-    return result.fold(
-      (l) {
-        error.value = l.toString();
-        return false;
-      },
-      (r) {
-        isAvailable.value = r;
-        log('checkUserAvailability: $r', name: "Edit User Controller");
-        return r;
-      },
-    );
-  }
-
-  /*
   * -  Update user data by user id, from Firebase Firestore.
   * -  This function is called when the user submits the form.
   * -  It validates the form and checks if the username is available.
@@ -81,25 +61,37 @@ class EditUserController extends GetxController {
     if (formKey.currentState!.validate()) {
       isLoading.value = true;
       error.value = '';
-
-      bool isAvailable = await checkUserAvailability(username);
-
-      if (isAvailable) {
-        final result = await userRepository.updateUser(id, username);
-        result.fold(
-          (l) {
-            error.value = l.toString();
-          },
-          (r) {
-            log('updateUser: $r', name: "Edit User Controller");
-            Get.back();
-          },
-        );
-      } else {
-        error.value = "Username is not available";
+      validationError.value = '';
+      final isAvailable = await isUsernameAvailable(usernameController.text);
+      if (!isAvailable) {
+        validationError.value = "Username is already taken";
+        isLoading.value = false;
+        return;
       }
-
-      isLoading.value = false;
+      final result = await userRepository.updateUser(id, username);
+      result.fold(
+        (l) {
+          error.value = l.toString();
+        },
+        (r) {
+          log('updateUser: $r', name: "Edit User Controller");
+          Get.back();
+        },
+      );
+    } else {
+      error.value = "Username is not available";
     }
+    isLoading.value = false;
+  }
+
+  Future<bool> isUsernameAvailable(String username) async {
+    final result = await userRepository.checkUserAvailability(username);
+    return result.fold(
+      (failure) {
+        log('Error checking username: $failure');
+        return false;
+      },
+      (isAvailable) => !isAvailable,
+    );
   }
 }

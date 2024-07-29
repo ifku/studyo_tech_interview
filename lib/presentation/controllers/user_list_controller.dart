@@ -11,8 +11,8 @@ class UserListController extends GetxController {
   final UserRepository userRepository = Get.find<UserRepository>();
   final RxList<UserEntity> users = <UserEntity>[].obs;
   final RxBool isLoading = false.obs;
-  final RxBool isAvailable = true.obs;
   final RxString error = ''.obs;
+  final RxString validationError = ''.obs;
   StreamSubscription? _userSubscription;
   final TextEditingController usernameController = TextEditingController();
   final formKey = GlobalKey<FormState>();
@@ -59,45 +59,41 @@ class UserListController extends GetxController {
     );
   }
 
-  Future<bool> checkUserAvailability(String username) async {
-    final result = await userRepository.checkUserAvailability(username);
-    return result.fold(
-      (l) {
-        error.value = l.toString();
-        return false;
-      },
-      (r) {
-        isAvailable.value = r;
-        log('checkUserAvailability: $r', name: "User List Controller");
-        return r;
-      },
-    );
-  }
-
   Future<void> createUser() async {
     if (formKey.currentState!.validate()) {
       isLoading.value = true;
       error.value = '';
+      validationError.value = '';
 
-      bool isUserAvailable = await checkUserAvailability(usernameController.text);
-      log('checkUserAvailability: $isUserAvailable', name: "User List Controller");
-
-
-      if (isUserAvailable) {
-        final result = await userRepository.createUser(usernameController.text);
-        result.fold(
-          (failure) {
-            error.value = failure.toString();
-          },
-          (success) {
-            usernameController.clear();
-          },
-        );
-      } else {
+      final isAvailable = await isUsernameAvailable(usernameController.text);
+      if (!isAvailable) {
+        validationError.value = "Username is already taken";
         isLoading.value = false;
+        return;
       }
+
+      final result = await userRepository.createUser(usernameController.text);
+      result.fold(
+        (failure) {
+          error.value = failure.toString();
+        },
+        (success) {
+          usernameController.clear();
+        },
+      );
 
       isLoading.value = false;
     }
+  }
+
+  Future<bool> isUsernameAvailable(String username) async {
+    final result = await userRepository.checkUserAvailability(username);
+    return result.fold(
+      (failure) {
+        log('Error checking username: $failure');
+        return false;
+      },
+      (isAvailable) => !isAvailable,
+    );
   }
 }

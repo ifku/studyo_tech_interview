@@ -92,14 +92,14 @@ class UserRemoteDatasource implements UserDatasource {
   Future<Either<Exception, bool>> checkUserAvailability(String username) async {
     final CollectionReference users = firestore.collection('users');
     try {
-      final usernameQuery =
-          await users.where('username', isEqualTo: username).get();
-      if (usernameQuery.docs.isNotEmpty) {
-        return const Right(false);
+      final querySnapshot = await users.where('username', isEqualTo: username).get();
+      if (querySnapshot.docs.isNotEmpty) {
+        return const Right<Exception, bool>(true);
+      } else {
+        return const Right<Exception, bool>(false);
       }
-      return const Right(true);
     } catch (e) {
-      return Left(Exception(e.toString()));
+      return Left<Exception, bool>(Exception(e.toString()));
     }
   }
 }

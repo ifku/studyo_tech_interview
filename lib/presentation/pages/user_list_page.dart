@@ -50,7 +50,7 @@ class UserListPage extends GetView<UserListController> {
           onPressed: () {
             Get.bottomSheet(
               Container(
-                height: MediaQuery.of(context).size.height * 0.3,
+                height: MediaQuery.of(context).size.height * 0.35,
                 decoration: const BoxDecoration(
                   color: AppColors.cyan100,
                   borderRadius: BorderRadius.only(
@@ -77,8 +77,6 @@ class UserListPage extends GetView<UserListController> {
                             } else if (!RegExp(r'^[a-zA-Z0-9 ]+$')
                                 .hasMatch(value)) {
                               return "Use characters and numbers only";
-                            } else if (controller.isAvailable.value == false) {
-                              return "Username is not available";
                             } else {
                               return null;
                             }
@@ -101,6 +99,19 @@ class UserListPage extends GetView<UserListController> {
                           ),
                         ),
                       ),
+                      Obx(() {
+                        if (controller.validationError.isNotEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              controller.validationError.value,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          );
+                        } else {
+                          return Container();
+                        }
+                      }),
                       const SizedBox(height: 16.0),
                       Center(child: CustomConfirmButton(onPressed: () {
                         log(controller.usernameController.text,

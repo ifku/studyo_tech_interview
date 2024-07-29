@@ -102,9 +102,6 @@ class EditUserPage extends GetView<EditUserController> {
                                       return "Username is the same";
                                     } else if (controller.isReview != false) {
                                       return "You can't change your username";
-                                    } else if (controller.isAvailable.value ==
-                                        false) {
-                                      return "Username is not available";
                                     } else {
                                       return null;
                                     }
@@ -131,6 +128,19 @@ class EditUserPage extends GetView<EditUserController> {
                                   ),
                                 ),
                               ),
+                              Obx(() {
+                                if (controller.validationError.isNotEmpty) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Text(
+                                      controller.validationError.value,
+                                      style: const TextStyle(color: Colors.red),
+                                    ),
+                                  );
+                                } else {
+                                  return Container();
+                                }
+                              }),
                               const SizedBox(height: 48.0),
                             ],
                           ),
