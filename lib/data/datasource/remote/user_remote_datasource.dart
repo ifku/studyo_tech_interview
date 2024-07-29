@@ -7,6 +7,15 @@ import 'package:studyo_tech_interview/data/datasource/user_datasource.dart';
 import 'package:studyo_tech_interview/data/model/user_model.dart';
 import 'package:uuid/uuid.dart';
 
+/*
+* - UserRemoteDatasource is a concrete class that implements UserDatasource.
+* - It contains methods to fetch all users, fetch user by id, create user, update user, and check user availability.
+* - fetchAllUsers() method returns a Stream of List of UserModel wrapped in Either of Exception.
+* - fetchUserById() method returns a Future of UserModel wrapped in Either of Exception.
+* - createUser() method returns a Future of bool wrapped in Either of Exception.
+* - updateUser() method returns a Future of bool wrapped in Either of Exception.
+* - checkUserAvailability() method returns a Future of bool wrapped in Either of Exception.
+* */
 class UserRemoteDatasource implements UserDatasource {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -36,7 +45,7 @@ class UserRemoteDatasource implements UserDatasource {
     final userId = const Uuid().v4();
     try {
       await user
-          .add({'userId': userId, 'username': username, 'isReview': true});
+          .add({'userId': userId, 'username': username, 'isReview': false});
       return const Right<Exception, bool>(true);
     } catch (e) {
       return Left<Exception, bool>(Exception(e.toString()));
@@ -62,8 +71,35 @@ class UserRemoteDatasource implements UserDatasource {
   }
 
   @override
-  Future<Either<Exception, bool>> updateUser(String username) async {
-    // TODO: implement updateUser
-    throw UnimplementedError();
+  Future<Either<Exception, bool>> updateUser(String id, String username) async {
+    final CollectionReference users = firestore.collection('users');
+    final querySnapshot = await users.where('userId', isEqualTo: id).get();
+
+    try {
+      if (querySnapshot.docs.isNotEmpty) {
+        final doc = querySnapshot.docs.first;
+        await doc.reference.update({'username': username, 'isReview': true});
+        return const Right(true);
+      } else {
+        return Left(Exception('User not found'));
+      }
+    } catch (e) {
+      return Left(Exception(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Exception, bool>> checkUserAvailability(String username) async {
+    final CollectionReference users = firestore.collection('users');
+    try {
+      final usernameQuery =
+          await users.where('username', isEqualTo: username).get();
+      if (usernameQuery.docs.isNotEmpty) {
+        return const Right(false);
+      }
+      return const Right(true);
+    } catch (e) {
+      return Left(Exception(e.toString()));
+    }
   }
 }

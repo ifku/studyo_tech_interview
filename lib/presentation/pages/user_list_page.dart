@@ -28,8 +28,6 @@ class UserListPage extends GetView<UserListController> {
           child: Obx(() {
             if (controller.isLoading.value) {
               return const Center(child: CircularProgressIndicator());
-            } else if (controller.error.isNotEmpty) {
-              return Center(child: Text(controller.error.value));
             } else {
               return ListView.builder(
                 itemCount: controller.users.length,
@@ -39,7 +37,8 @@ class UserListPage extends GetView<UserListController> {
                   return ListTile(
                     title: Text(user.username),
                     onTap: () {
-                      Get.to(() => const EditUserPage(), arguments: {'userId': user.userId});
+                      Get.to(() => const EditUserPage(),
+                          arguments: {'userId': user.userId});
                     },
                   );
                 },
@@ -75,9 +74,11 @@ class UserListPage extends GetView<UserListController> {
                               return "Username cannot be empty";
                             } else if (value.length < 8) {
                               return "Minimum 8 characters";
-                            } else if (!RegExp(r'^[a-zA-Z0-9]+$')
+                            } else if (!RegExp(r'^[a-zA-Z0-9 ]+$')
                                 .hasMatch(value)) {
                               return "Use characters and numbers only";
+                            } else if (controller.isAvailable.value == false) {
+                              return "Username is not available";
                             } else {
                               return null;
                             }
@@ -105,9 +106,10 @@ class UserListPage extends GetView<UserListController> {
                         log(controller.usernameController.text,
                             name: "Username");
                         if (controller.formKey.currentState != null) {
-                          controller.formKey.currentState!.validate();
-                          controller.createUser();
-                          Get.back();
+                          if (controller.formKey.currentState!.validate()) {
+                            controller.createUser();
+                            Get.back();
+                          }
                         }
                       }))
                     ],
